@@ -4,7 +4,7 @@ import Std
 
 -- 証明があるべき場所に`sorry`と書いてあるので...
 example : 1 + 1 = 2 := by
-  sorry
+  triv
 
 -- 正しい証明に書き直そう！
 example : 1 + 1 = 2 := by
@@ -41,17 +41,21 @@ variable (P Q R : Prop)
 
 example (hP : P) : P := by
   -- ヒント: `apply hP`と入力すれば仮定をゴールに適用できる。
-  sorry
+  apply hP
 
 example (h : P → Q) (hP : P) : Q := by
   -- 改行して複数のtacticを並べることもできる。インデント（行の頭の空白の個数）を
   -- 揃える必要があることに注意しよう。
   -- ヒント: `apply`を2回使う。
-  sorry
+  apply h
+  apply hP
 
 example (h : P → Q) (h' : Q → R) : P → R := by
   -- ヒント: `intro hP`と入力すれば仮定`hP : P`が得られる。
-  sorry
+  intro hP
+  apply h'
+  apply h
+  apply hP
 
 -- TIPS: 入力した`intro`や`apply`の上にカーソルを乗せるとtacticの説明が表示される。
 
@@ -61,13 +65,21 @@ example (h : P → Q) (h' : Q → R) : P → R := by
 
 example (hP : P) (hP' : ¬P) : False := by
   -- ヒント: 否定命題も`apply`することができる。
-  sorry
+  apply hP'
+  apply hP
 
 example : (P → Q) → ¬Q → ¬P := by
-  sorry
+  intro h hQ hP
+  apply hQ
+  apply h
+  apply hP
 
 example : ¬¬¬P → ¬P := by
-  sorry
+  intro h1 h2
+  apply h1
+  intro h3
+  apply h3
+  apply h2
 
 /- # 偽
 偽命題`False`からは任意の命題が証明できる。この事実には`False.elim`という名前がついている。
@@ -77,7 +89,10 @@ example : False → P := by
   apply False.elim
 
 example (h : ¬P) : P → Q := by 
-  sorry
+  intro h1
+  apply False.elim
+  apply h
+  apply h1
 
 /- # かつ
 「PかつQ」は`P ∧ Q`と書かれる。`P ∧ Q`を示したい場合、`constructor`を用いれば右画面に表示される
@@ -89,28 +104,34 @@ example (hP : P) (hQ : Q) : P ∧ Q := by
   -- それぞれのゴールに的を絞ることができる。
   constructor
   case left =>
-    sorry
+    apply hP
   case right =>
-    sorry
+    apply hQ
 
 example (hP : P) (hQ : Q) : P ∧ Q := by
   -- 別の書き方: `·`を用いた箇条書きでも分岐したでもそれぞれのゴールに的を絞ることができる。
   constructor
-  · sorry
-  · sorry
+  · apply hP
+  · apply hQ
 
 /- # かつ
 仮定`h : P ∧ Q`を持っているとき、`h.left`で`P`の証明を、`h.right`で`Q`の証明を得ることができる。
 -/
 
 example : P ∧ Q → P := by
-  sorry
+  intro h
+  apply h.left
 
 example : P ∧ Q → Q := by
-  sorry
+  intro h
+  apply h.right
 
 example : P ∧ Q → Q ∧ P := by
-  sorry
+  intro h
+  constructor
+  . apply h.right
+  . apply h.left
+
 
 /- # または
 「PまたはQ」は`P ∨ Q`と書かれる。仮定`h : P ∨ Q`を持っているとき、`cases h`によって場合分けの
@@ -124,25 +145,46 @@ example : P ∨ Q → (P → R) → (Q → R) → R := by
   cases h
   -- `case inl hP`で左側の命題`P`の証明に`hP`という名前を付けている。
   case inl hP => 
-    sorry
+    apply hPR
+    apply hP
   case inr hQ => 
-    sorry
+    apply hQR
+    apply hQ
 
 example : P ∨ Q → (P → R) → (Q → R) → R := by
   intro h hPR hQR
   -- `rcases`という`cases`の別バージョンがある。ひとつの違いとして、こちらは`case`を使わなくても
   -- 分岐した仮定に名前を付けられる。箇条書きを使いたい人はこちらを使おう。
   rcases h with hP | hQ
-  · sorry
-  · sorry
+  · apply hPR
+    apply hP
+  · apply hQR
+    apply hQ
 
 example (h : P ∨ Q) : (P → R) → (Q → P) → R := by
-  sorry
+  intro hPR hQP
+  cases h
+  case inl hP =>
+    apply hPR
+    apply hP
+  case inr hQ =>
+    apply hPR
+    apply hQP
+    apply hQ
+
 
 example : ¬¬P → P := by 
   -- `have` tacticで仮定を追加することができる。以降のファイルではヒントとしても用いる。
   have h : P ∨ ¬P := by apply Classical.em
-  sorry
+  cases h
+  case inl hP => 
+    intro _
+    apply hP
+  case inr hnP =>
+    intro hnnP
+    apply False.elim
+    apply hnnP
+    apply hnP
 
 /-
 最初のチュートリアルファイル`Lecture1.lean`は以上です。
